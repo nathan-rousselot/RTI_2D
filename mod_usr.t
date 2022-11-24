@@ -4,8 +4,14 @@ module mod_usr
   implicit none
   double precision :: rhodens,rholight=1.0d0,Atwoods=0.8,Reynolds=2000 
   double precision :: lamda=0.4  !lamda=xprobmax1-xprobmin1 
+  double precision :: pint, pbottom
+
   ! the location of demarcation line  
   double precision :: y0=1.6d0
+
+  pint = (one+Atwoods)/(one-Atwoods)*(xprobmax2-y0)
+  pbottom = pint+w(ix0^S,rho_)*y0
+
 
 contains
 
@@ -31,10 +37,9 @@ contains
 
     integer :: ix^D
 
-    double precision:: epsilon,kx,pint
+    double precision:: epsilon,kx
     logical::          first
     data first/.true./
-    double precision :: pbottom     
 
     ! density of two types
     rhodens=rholight*(one+Atwoods)/(one-Atwoods)
@@ -67,8 +72,6 @@ contains
     w(ixO^S, mom(:)) = zero
 
     ! pressure at interface
-    pint=(one+Atwoods)/(one-Atwoods)*(xprobmax2-y0)
-    pbottom = pint+w(ix0^S,rho_)*y0
 
     if(hd_energy) then
       w(ixO^S,e_)=pint-w(ixO^S,rho_)*(x(ixO^S,2)-y0)
@@ -83,9 +86,7 @@ contains
     integer, intent(in) :: ixO^L, iB, ixI^L
     double precision, intent(in) :: qt, x(ixI^S,1:ndim)
     double precision, intent(inout) :: w(ixI^S,1:nw)
-    double precision                :: pint
 
-    pint=(one+Atwoods)/(one-Atwoods)*(xprobmax2-y0)
     select case(iB)
     case(3)
       w(ixO^S,rho_)=rholight
