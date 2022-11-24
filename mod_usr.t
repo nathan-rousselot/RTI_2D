@@ -34,7 +34,7 @@ contains
     double precision:: epsilon,kx,pint
     logical::          first
     data first/.true./
-    double precision :: pbottom, pint     
+    double precision :: pbottom     
 
     ! density of two types
     rhodens=rholight*(one+Atwoods)/(one-Atwoods)
