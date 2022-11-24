@@ -3,7 +3,7 @@ module mod_usr
 
   implicit none
   double precision :: rhodens,rholight=1.0d0,Atwoods=0.8,Reynolds=2000 
-  double precision :: lamda=0.4  !lamda=xprobmax1-xprobmin1 
+  double precision :: lamda  
   double precision :: pint, pbottom
 
   ! the location of demarcation line  
@@ -37,17 +37,14 @@ contains
     logical::          first
     data first/.true./
 
-    pint = (one+Atwoods)/(one-Atwoods)*(xprobmax2-y0)
-    pbottom = pint+w(ixOmin1, ixOmin2, rho_)*y0
-
     ! density of two types
     rhodens=rholight*(one+Atwoods)/(one-Atwoods)
 
     ! setup the perturbation
     epsilon=0.5d0
-    ! kx=2 pi
-    kx=8.0d0*atan(one)
     lamda=xprobmax1-xprobmin1
+    ! kx=2 pi
+    kx=8.0d0*atan(one)/lamda
     ! print out the info
     if (first) then
        if (mype==0) then
@@ -65,7 +62,10 @@ contains
        first=.false.
     end if
 
-    w(ixO^S,rho_)=epsilon*(1.d0+ERF(170.d0*(x(ixO^S,2)-y0)-2*cos(kx*x(ixO^S,1))))*(rhodens-rholight)+rholight
+    w(ixO^S,rho_)=epsilon*(1.d0+ERF(170.d0*(x(ixO^S,2)-y0)-2.0*cos(kx*x(ixO^S,1))))*(rhodens-rholight)+rholight
+
+    pint = (one+Atwoods)/(one-Atwoods)*(xprobmax2-y0)
+    pbottom = 1.0 !pint+w(ixOmin1, ixOmin2, rho_)*y0
 
     ! set all velocity to zero
     w(ixO^S, mom(:)) = zero

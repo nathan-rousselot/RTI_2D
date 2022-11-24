@@ -1,7 +1,7 @@
 !setup.pl -d=2
 
 &filelist
-  base_filename    = 'rt_2d_R'
+  base_filename    = '/scratch/leuven/351/vsc35193/RTI_2D/RTI_2D'
   !typefilelog      = 'regression_test'
   autoconvert      = .true.
   convert_type     = 'vtuBCCmpi'
