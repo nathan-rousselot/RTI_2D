@@ -37,7 +37,7 @@ contains
     logical::          first
     data first/.true./
 
-    pint = (one+Atwoods)/(one-Atwoods)*(-y0)
+    pint = (one+Atwoods)/(one-Atwoods)*(xprobmax2-y0)
     pbottom = pint+w(ixOmin1, ixOmin2, rho_)*y0
 
     ! density of two types
