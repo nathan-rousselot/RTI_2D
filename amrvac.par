@@ -1,0 +1,65 @@
+!setup.pl -d=2
+
+&filelist
+  base_filename    = 'rt_2d_R'
+  !typefilelog      = 'regression_test'
+  autoconvert      = .true.
+  convert_type     = 'vtuBCCmpi'
+  saveprim         = .true.
+/
+
+ &savelist
+   itsave(1,1)=0
+   itsave(1,2)=0
+   dtsave_log  = 1.d-1
+   dtsave_dat  = 0.1d0
+/
+
+ &stoplist
+   time_max   = 3.d0
+/
+
+ &methodlist
+   time_stepper     = 'fourstep'
+   flux_scheme       = 20*'hllc'
+   limiter    = 20*'cada3'
+/
+
+ &boundlist
+  typeboundary_min1 = 4*'periodic'
+  typeboundary_max1 = 4*'periodic'
+  !typeboundary_min2 = 'symm','symm','asymm','symm'
+  !typeboundary_max2 = 'symm','symm','asymm','symm'
+  typeboundary_min2 = 4*'special'
+  typeboundary_max2 = 4*'special'
+/
+
+ &meshlist
+   refine_criterion   = 3
+   refine_max_level   = 2
+   block_nx1        = 10
+   block_nx2        = 80
+   domain_nx1       = 80
+   domain_nx2       = 640
+   xprobmin1       = 0.0d0
+   xprobmax1       = 0.4d0
+   xprobmin2       = 0.0d0
+   xprobmax2       = 3.2d0
+ /
+
+ &paramlist
+  slowsteps        = 10
+ /
+
+ &hd_list
+  hd_gravity = .true.
+  hd_viscosity=.true.
+  !hd_thermal_conduction=.true.
+  !hd_radiativ_cooling=.true.
+ /
+
+ &vc_list
+  vc_mu=4.2163705765687763d-4  !see the ouput for this value
+
+ /
+
