@@ -2,10 +2,10 @@ module mod_usr
   use mod_hd
 
   implicit none
-  double precision :: rhodens,rholight=1.0d0,Atwoods=0.8,Reynolds=2000 
-  double precision :: lamda  
+  double precision :: rhodens,rholight=1.0d0,Atwoods=0.04d0,Reynolds=100.0d0 
+  double precision :: lamda=0.4  
   double precision :: pint, pbottom
-
+ 
   ! the location of demarcation line  
   double precision :: y0=1.6d0
 
@@ -15,7 +15,7 @@ contains
 
     usr_init_one_grid => initonegrid_usr
     usr_gravity       => gravity
-    usr_special_bc    => specialbound_usr
+    ! usr_special_bc    => specialbound_usr
     
     unit_time=sqrt(lamda/Atwoods)
     unit_velocity=sqrt(lamda*Atwoods/(1.0+Atwoods))
@@ -56,8 +56,9 @@ contains
           print *,'unit_time',unit_time
           print *,'unit_velocity',unit_velocity
           print *,'unit_numberdensity',unit_numberdensity
-          print *,'lamda',lamda
-          print *,'vc_mu in the .par file should be', lamda*sqrt(Atwoods*1.0*lamda/(Atwoods+1))/(Reynolds*2/(rhodens+rholight))
+          print *,'lamda: ',lamda
+          print *,'Atwoods: ', Atwoods
+          print *,'vc_mu from .par file', lamda*sqrt(Atwoods*1.0*lamda/(Atwoods+1.0d0))/(2.0*Reynolds/(rhodens + rholight))
        end if
        first=.false.
     end if
