@@ -7,7 +7,7 @@ module mod_usr
   double precision :: pint
  
   ! the location of demarcation line  
-  double precision :: y0=2.2d0
+  double precision :: y0=1.6d0
 
 contains
 
@@ -18,8 +18,8 @@ contains
     usr_gravity       => gravity
     usr_special_bc    => specialbound_usr
     
-    unit_time=sqrt(g*lamda/Atwoods)
-    unit_velocity=sqrt(g*lamda*Atwoods/(1.0+Atwoods))
+    unit_time=sqrt(lamda/Atwoods)
+    unit_velocity=sqrt(lamda*Atwoods/(1.0+Atwoods))
     unit_numberdensity=1.0d3
   
     call set_coordinate_system("Cartesian")
@@ -66,7 +66,7 @@ contains
 
     w(ixO^S,rho_)=epsilon*(1.d0+ERF(170.d0*(x(ixO^S,2)-y0)-epsilon*cos(kx*x(ixO^S,1))))*(rhodens-rholight)+rholight
 
-    pint = rholight*(one+Atwoods)/(one-Atwoods)*(xprobmax2-y0)
+    pint = rholight*(one+Atwoods)/(one-Atwoods)*(xprobmax2-y0)*10.d0+9.d0*y0
 
     ! set all velocity to zero
     w(ixO^S, mom(:)) = zero

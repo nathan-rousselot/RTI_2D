@@ -1,5 +1,5 @@
 #!/bin/bash -l
-#PBS -l walltime=00:15:00
+#PBS -l walltime=00:25:00
 #PBS -l nodes=1:ppn=36
 #PBS -M klaas.willems@student.kuleuven.be
 #PBS -A lp_edu_amrvac_2022
