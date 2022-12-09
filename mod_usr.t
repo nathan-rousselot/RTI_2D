@@ -2,10 +2,10 @@ module mod_usr
   use mod_hd
 
   implicit none
-  double precision :: rhodens,rholight=1.0d0,Atwoods=0.8,Reynolds=2000 
-  double precision :: lamda  
-  double precision :: pint, pbottom
-
+  double precision :: rhodens,rholight=1.0d0,Atwoods=0.04d0,Reynolds=1000.0d0 
+  double precision :: lamda=0.4  
+  double precision :: pint
+ 
   ! the location of demarcation line  
   double precision :: y0=1.6d0
 
@@ -20,6 +20,7 @@ contains
     unit_time=sqrt(lamda/Atwoods)
     unit_velocity=sqrt(lamda*Atwoods/(1.0+Atwoods))
     unit_numberdensity=1.0d3
+    unit_temperature = 1.d0
   
     call set_coordinate_system("Cartesian")
     call hd_activate()
@@ -56,16 +57,16 @@ contains
           print *,'unit_time',unit_time
           print *,'unit_velocity',unit_velocity
           print *,'unit_numberdensity',unit_numberdensity
-          print *,'lamda',lamda
-          print *,'vc_mu in the .par file should be', lamda*sqrt(Atwoods*1.0*lamda/(Atwoods+1))/(Reynolds*2/(rhodens+rholight))
+          print *,'lamda: ',lamda
+          print *,'Atwoods: ', Atwoods
+          print *,'vc_mu from .par file', lamda*sqrt(Atwoods*1.0*lamda/(Atwoods+1.0d0))/(2.0*Reynolds/(rhodens + rholight))
        end if
        first=.false.
     end if
 
-    w(ixO^S,rho_)=epsilon*(1.d0+ERF(170.d0*(x(ixO^S,2)-y0)-2.0*cos(kx*x(ixO^S,1))))*(rhodens-rholight)+rholight
+    w(ixO^S,rho_)=epsilon*(1.d0+ERF(170.d0*(x(ixO^S,2)-y0)-epsilon*cos(kx*x(ixO^S,1))))*(rhodens-rholight)+rholight
 
-    pint = (one+Atwoods)/(one-Atwoods)*(xprobmax2-y0)
-    pbottom = 1.0 !pint+w(ixOmin1, ixOmin2, rho_)*y0
+    pint = rholight*(one+Atwoods)/(one-Atwoods)*(xprobmax2-y0)*10.d0+9.d0*y0
 
     ! set all velocity to zero
     w(ixO^S, mom(:)) = zero
@@ -74,7 +75,7 @@ contains
 
     if(hd_energy) then
       w(ixO^S,e_)=pint-w(ixO^S,rho_)*(x(ixO^S,2)-y0)
-      w(ixO^S,e_)=w(ixO^S,e_)/(hd_gamma-one)/pbottom
+      w(ixO^S,e_)=w(ixO^S,e_)/(hd_gamma-one)
     end if
 
   end subroutine initonegrid_usr
@@ -85,24 +86,33 @@ contains
     integer, intent(in) :: ixO^L, iB, ixI^L
     double precision, intent(in) :: qt, x(ixI^S,1:ndim)
     double precision, intent(inout) :: w(ixI^S,1:nw)
-
+    integer ::  ix^D,ixOs^L
+    double precision :: pth(ixI^S),tmp(ixI^S),ggrid(ixI^S),invT(ixI^S)
     select case(iB)
     case(3)
       w(ixO^S,rho_)=rholight
       w(ixO^S,e_)=pint-w(ixO^S,rho_)*(x(ixO^S,2)-y0)
-      w(ixO^S, e_)=w(ixO^S, e_)/pbottom
       w(ixO^S,mom(2))=0.d0
       w(ixO^S,mom(1))=0.d0
       call hd_to_conserved(ixI^L,ixO^L,w,x)
     case(4)
-      w(ixO^S,rho_)=rhodens
-      w(ixO^S,e_)=pint-w(ixO^S,rho_)*(x(ixO^S,2)-y0)
-      w(ixO^S, e_)=w(ixO^S, e_)/pbottom
-      w(ixO^S,mom(2))=0.d0
-      w(ixO^S,mom(1))=0.d0
+      w(ixO^S,mom(1))=0
+      w(ixO^S,mom(2))=0  
+      ixOs^L=ixO^L;
+      ixOsmin2=ixOmin2-1;ixOsmax2=ixOmin2-1;
+      call hd_get_pthermal(w,x,ixI^L,ixOs^L,pth)
+      !> fill pth, rho ghost layers according to gravity stratification
+      invT(ixOmin2-1^%2ixO^S)=w(ixOmin2-1^%2ixO^S,rho_)/pth(ixOmin2-1^%2ixO^S)
+      tmp=0.d0
+      do ix2=ixOmin2,ixOmax2
+        tmp(ixOmin2-1^%2ixO^S)=tmp(ixOmin2-1^%2ixO^S)-invT(ixOmin2-1^%2ixO^S)
+        w(ix2^%2ixO^S,p_)=pth(ixOmin2-1^%2ixO^S)*dexp(tmp(ixOmin2-1^%2ixO^S)*dxlevel(2))
+        w(ix2^%2ixO^S,rho_)=w(ix2^%2ixO^S,p_)*invT(ixOmin2-1^%2ixO^S)
+      enddo
       call hd_to_conserved(ixI^L,ixO^L,w,x)
     end select
   end subroutine specialbound_usr
+
 
   ! Calculate gravitational acceleration in each dimension
   subroutine gravity(ixI^L,ixO^L,wCT,x,gravity_field)
@@ -112,7 +122,7 @@ contains
     double precision, intent(out)   :: gravity_field(ixI^S,ndim)
 
     gravity_field(ixO^S,:)=0.d0
-    gravity_field(ixO^S,2)=-1.d0
+    gravity_field(ixO^S,2)=-1.0d0
 
   end subroutine gravity
 

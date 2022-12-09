@@ -16,7 +16,7 @@
 /
 
  &stoplist
-   time_max   = 3.d0
+   time_max   = 18.973665961010276d0
 /
 
  &methodlist
@@ -59,7 +59,11 @@
  /
 
  &vc_list
-  vc_mu=4.2163705765687763d-4  !see the ouput for this value
-
+  vc_mu=5.16811394121702e-05 !Atwoods = 0.04, Reynolds = 1000
+  !vc_mu=0.0005168113941217019d0 !Atwoods = 0.04, Reynolds = 100
+  !vc_mu=4.2163705765687763d-4 !Atwoods = 0.8, Reynolds = 2000
  /
 
+ !&tc_list
+ !tc_k_para=0.01074252254265138d0
+!/
