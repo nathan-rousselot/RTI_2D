@@ -121,6 +121,8 @@ def plotBubbleSpikeData(file, tauMax):
 
     plt.show()
 
-# getBubbleSpikeData('../sshFiles')
-# plotBubbleSpikeData('../sshFiles/bubbleSpikeData.npy', 6)
+
+if __name__ == '__main__':
+    getBubbleSpikeData('../sshFiles')
+    plotBubbleSpikeData('../sshFiles/bubbleSpikeData.npy', 6)
 
