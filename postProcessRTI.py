@@ -2,10 +2,11 @@ import numpy as np
 import matplotlib.pyplot as plt
 import yt
 import os
+import sys
 
 # plt.rcParams['text.usetex'] = True # Use latex formatting in matplotlib figures 
 
-def getParfileValues(Atwoods, Reynolds, lamba = 0.4, rholight=1.0, taumax = 6):
+def getParfileValues(Atwoods: float, Reynolds: float, lamba: float = 0.4, rholight: float = 1.0, taumax: float = 6):
     # Compute parameters for in the par file
     # Inputs:
     #   Atwoods number
@@ -25,7 +26,7 @@ def getParfileValues(Atwoods, Reynolds, lamba = 0.4, rholight=1.0, taumax = 6):
     return vc_mu, time_max, tc_k_para
 
 
-def getBSHeigthVelocity(fileName, level=2):
+def getBSHeigthVelocity(fileName: str, level: int = 2):
     # Get the Bubble and spike height and velocity
     # Inputs:
     #   fileName: str: name of .dat file
@@ -53,22 +54,24 @@ def getBSHeigthVelocity(fileName, level=2):
     indexBubbleMax = np.argmax(gradRhoBubble)
     indexSpikeMax = np.argmax(gradRhoSpike)
 
-    FrB = velocityL2[0, indexBubbleMax, 0].value
-    FrS = velocityL2[int(xnum/2), indexSpikeMax, 0].value
+    UB = velocityL2[0, indexBubbleMax, 0].value
+    US = velocityL2[int(xnum/2), indexSpikeMax, 0].value
 
     hB = yGridL2[0, indexBubbleMax, 0].value
     hS = yGridL2[int(xnum/2), indexSpikeMax, 0].value
 
-    return hB, FrB, hS, FrS
+    return hB, UB, hS, US
 
 
-def getBubbleSpikeData(folderName):
+def getBubbleSpikeData(folderName: str, Atwoods: float, lamba: float, y0: float):
     # store bubble/spike heigts and velocities from .dat files in file bubbleSpikeData.npy. The data is store in an array in file in folderName.
     #   The columns of the array contain the bubble height, bubble velocity, spike height, spike velocity
     # Input: 
     #   folderName: folder in which all the .dat files are present
     # Outputs: 
     #   data: the same matrix that is stored is returned as well
+
+    print(f'Retrieving bubble/spike data from {folderName}')
 
     filesInFolderTemp = os.listdir(folderName)
     filesInFolder = []
@@ -81,17 +84,17 @@ def getBubbleSpikeData(folderName):
 
     data = np.zeros((nbFiles, 4))
     for index, file in enumerate(filesInFolder):
-        hB, FrB, hS, FrS = getBSHeigthVelocity(folderName + '/' + file)
-        data[index, 0] = hB
-        data[index, 1] = FrB
-        data[index, 2] = hS
-        data[index, 3] = FrS
+        hB, UB, hS, US = getBSHeigthVelocity(folderName + '/' + file)
+        data[index, 0] = (hB - y0)/lamba
+        data[index, 1] = UB/np.sqrt(Atwoods*lamba/(1.0 + Atwoods))
+        data[index, 2] = abs(hS - y0)/lamba
+        data[index, 3] = abs(US)/np.sqrt(Atwoods*lamba/(1.0 + Atwoods))
     
     np.save(folderName + '/' + 'bubbleSpikeData', data)
 
     return data
 
-def plotBubbleSpikeData(file, tauMax):
+def plotBubbleSpikeData(file: str, tauMax: int = 6):
     # Plot the BubbleSpikeData 
     data = np.load(file)
     s = np.shape(data)
@@ -107,7 +110,7 @@ def plotBubbleSpikeData(file, tauMax):
     plt.subplot(2, 2, 3)
     plt.plot(tauRange, data[:, 0], '.-')
     plt.xlabel(r'\tau')
-    plt.ylabel(r'h_B')
+    plt.ylabel(r'h_B / lambda')
 
     plt.subplot(2, 2, 2)
     plt.plot(tauRange, data[:, 3], '.-')
@@ -117,12 +120,26 @@ def plotBubbleSpikeData(file, tauMax):
     plt.subplot(2, 2, 4)
     plt.plot(tauRange, data[:, 2], '.-')
     plt.xlabel(r'\tau')
-    plt.ylabel(r'h_S')
+    plt.ylabel(r'h_S / lambda')
 
+    slashIndex = file.rfind('/')
+    folderName = file[0:slashIndex+1]
+
+    plt.savefig(folderName + 'BubbleSpikeHeightVelocity.png')
     plt.show()
 
 
+
 if __name__ == '__main__':
-    getBubbleSpikeData('../sshFiles')
-    plotBubbleSpikeData('../sshFiles/bubbleSpikeData.npy', 6)
+    # The folder in which all the .dat all stored should be passed as a command line argument
+
+    if len(sys.argv) != 5:
+        raise ValueError('Command line arguments: 1. path to folder with .dat files. 2. Atwoods number. 3. lambda. 4. y0')
+    Atwoods = float(sys.argv[2])
+    lamba = float(sys.argv[3])
+    y0 = float(sys.argv[4])
+    folder = sys.argv[1]
+
+    getBubbleSpikeData(folder, Atwoods, lamba, y0)
+    plotBubbleSpikeData(folder + 'bubbleSpikeData.npy')
 
