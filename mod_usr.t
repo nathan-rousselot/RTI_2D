@@ -2,7 +2,7 @@ module mod_usr
   use mod_hd
 
   implicit none
-  double precision :: rhodens,rholight=1.0d0,Atwoods=0.04d0,Reynolds=100.0d0 
+  double precision :: rhodens,rholight=1.0d0,Atwoods=0.04d0,Reynolds=1000.0d0 
   double precision :: lamda=0.4  
   double precision :: pint
  
@@ -12,7 +12,6 @@ module mod_usr
 contains
 
   subroutine usr_init()
-    double precision :: g = 9.81
 
     usr_init_one_grid => initonegrid_usr
     usr_gravity       => gravity
@@ -21,6 +20,7 @@ contains
     unit_time=sqrt(lamda/Atwoods)
     unit_velocity=sqrt(lamda*Atwoods/(1.0+Atwoods))
     unit_numberdensity=1.0d3
+    unit_temperature = 1.d0
   
     call set_coordinate_system("Cartesian")
     call hd_activate()
@@ -114,31 +114,6 @@ contains
   end subroutine specialbound_usr
 
 
-  subroutine specialbound_usrOld(qt,ixI^L,ixO^L,iB,w,x)
-    use mod_global_parameters
-    ! special boundary types, user defined
-    integer, intent(in) :: ixO^L, iB, ixI^L
-    double precision, intent(in) :: qt, x(ixI^S,1:ndim)
-    double precision, intent(inout) :: w(ixI^S,1:nw)
-
-    select case(iB)
-    case(3)
-      w(ixO^S,rho_)=rholight
-      w(ixO^S,e_)=pint-w(ixO^S,rho_)*(x(ixO^S,2)-y0)
-      w(ixO^S, e_)=w(ixO^S, e_)
-      w(ixO^S,mom(2))=0.d0
-      w(ixO^S,mom(1))=0.d0
-      call hd_to_conserved(ixI^L,ixO^L,w,x)
-    case(4)
-      w(ixO^S,rho_)=rhodens
-      w(ixO^S,e_)=pint-w(ixO^S,rho_)*(x(ixO^S,2)-y0)
-      w(ixO^S, e_)=w(ixO^S, e_)
-      w(ixO^S,mom(2))=0.d0
-      w(ixO^S,mom(1))=0.d0
-      call hd_to_conserved(ixI^L,ixO^L,w,x)
-    end select
-  end subroutine specialbound_usrOld
-
   ! Calculate gravitational acceleration in each dimension
   subroutine gravity(ixI^L,ixO^L,wCT,x,gravity_field)
     integer, intent(in)             :: ixI^L, ixO^L
@@ -147,7 +122,7 @@ contains
     double precision, intent(out)   :: gravity_field(ixI^S,ndim)
 
     gravity_field(ixO^S,:)=0.d0
-    gravity_field(ixO^S,2)=-1.d0
+    gravity_field(ixO^S,2)=-1.0d0
 
   end subroutine gravity
 
