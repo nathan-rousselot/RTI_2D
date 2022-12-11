@@ -3,10 +3,11 @@ import matplotlib.pyplot as plt
 import yt
 import os
 import sys
+from scipy.constants import m_p, k, R
 
 # plt.rcParams['text.usetex'] = True # Use latex formatting in matplotlib figures 
 
-def getParfileValues(Atwoods: float, Reynolds: float, lamba: float = 0.4, rholight: float = 1.0, taumax: float = 6):
+def getParfileValues(Atwoods: float, Reynolds: float, lamba: float = 0.4, rholight: float = 1.0, taumax: float = 6, he_abundance = 0.1):
     # Compute parameters for in the par file
     # Inputs:
     #   Atwoods number
@@ -21,10 +22,34 @@ def getParfileValues(Atwoods: float, Reynolds: float, lamba: float = 0.4, rholig
     rhodens=rholight*(1.0+Atwoods)/(1.0-Atwoods)
     vc_mu = lamba*np.sqrt(Atwoods*lamba/(Atwoods+1.0))/(2*Reynolds/(rholight + rhodens))
     time_max = taumax/np.sqrt(Atwoods/lamba)
-    R = 8.31446261815324
-    tc_k_para = vc_mu*5/2*R
-    return vc_mu, time_max, tc_k_para
 
+    unit_time=np.sqrt(lamba/Atwoods)
+    unit_velocity=np.sqrt(lamba*Atwoods/(1.0+Atwoods))
+    unit_numberdensity=1e24
+    unit_density = (1 + 4*he_abundance)*m_p*unit_numberdensity
+    unit_length = unit_velocity*unit_time
+    unit_mass = unit_density*np.power(unit_length, 3)
+    unit_pressure = unit_density*np.power(unit_velocity, 2)
+    unit_temperature = unit_pressure/((2 + 3*he_abundance)*unit_numberdensity*k)
+    unit_energy = unit_mass*np.power(unit_length, 2)/np.power(unit_time, 2)
+
+    Mp = 1.00727646627*1e-3 # proton molar mass
+
+    vc_mu = vc_mu*unit_length*unit_time/unit_mass
+
+    tc_k_para = vc_mu*5/2*R/Mp # with units
+    tc_k_para = tc_k_para*unit_temperature*unit_mass/unit_energy # make unitless
+
+    print(f'{unit_time=}')
+    print(f'{unit_velocity=}')
+    print(f'{unit_numberdensity=}')
+    print(f'{vc_mu=}')
+    print(f'{tc_k_para=}')
+    print(f'{time_max=}')
+
+    return vc_mu, tc_k_para, time_max
+
+getParfileValues(0.04, 1000)
 
 def getBSHeigthVelocity(fileName: str, level: int = 2):
     # Get the Bubble and spike height and velocity
@@ -129,7 +154,7 @@ def plotBubbleSpikeData(file: str, tauMax: int = 6):
     plt.show()
 
 
-
+'''
 if __name__ == '__main__':
     # The folder in which all the .dat all stored should be passed as a command line argument
 
@@ -142,4 +167,4 @@ if __name__ == '__main__':
 
     getBubbleSpikeData(folder, Atwoods, lamba, y0)
     plotBubbleSpikeData(folder + 'bubbleSpikeData.npy')
-
+'''
