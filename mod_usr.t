@@ -19,7 +19,7 @@ contains
     
     unit_time=sqrt(lamda/Atwoods)
     unit_velocity=sqrt(lamda*Atwoods/(1.0+Atwoods))
-    unit_numberdensity=1.0d3
+    unit_numberdensity=1.0d20
     unit_temperature = 1.d0
   
     call set_coordinate_system("Cartesian")
