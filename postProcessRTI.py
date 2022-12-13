@@ -3,11 +3,12 @@ import matplotlib.pyplot as plt
 import yt
 import os
 import sys
-from scipy.constants import m_p, k, R
+from typing import Final
+from scipy.constants import m_p, k, R, N_A
 
 # plt.rcParams['text.usetex'] = True # Use latex formatting in matplotlib figures 
 
-def getParfileValues(Atwoods: float, Reynolds: float, lamba: float = 0.4, rholight: float = 1.0, taumax: float = 6, he_abundance = 0.1):
+def getParfileValues(Atwoods: float, Reynolds: float, lamba: float = 0.4, rholight: float = 1.0, taumax: float = 6, he_abundance = 0.1, g = 1.0):
     # Compute parameters for in the par file
     # Inputs:
     #   Atwoods number
@@ -19,37 +20,48 @@ def getParfileValues(Atwoods: float, Reynolds: float, lamba: float = 0.4, rholig
     #   vc_mu: viscosity related in &vc_list
     #   time_max: simulation length in physical units in &stoplist
 
-    rhodens=rholight*(1.0+Atwoods)/(1.0-Atwoods)
-    vc_mu = lamba*np.sqrt(Atwoods*lamba/(Atwoods+1.0))/(2*Reynolds/(rholight + rhodens))
-    time_max = taumax/np.sqrt(Atwoods/lamba)
+    m_pCGS: Final[float] = m_p*1e3
+    kCGS: Final[float] = k*1e7
+    RCGS: Final[float] = R*1e7
 
-    unit_time=np.sqrt(lamba/Atwoods)
-    unit_velocity=np.sqrt(lamba*Atwoods/(1.0+Atwoods))
-    unit_numberdensity=1e24
-    unit_density = (1 + 4*he_abundance)*m_p*unit_numberdensity
+    # Dimensions
+    unit_time = np.sqrt(lamba/Atwoods) # which lambda?
+    unit_velocity = np.sqrt(lamba*Atwoods/(1.0+Atwoods))
+    unit_numberdensity=1e20
+    unit_density = (1 + 4*he_abundance)*m_pCGS*unit_numberdensity
     unit_length = unit_velocity*unit_time
     unit_mass = unit_density*np.power(unit_length, 3)
     unit_pressure = unit_density*np.power(unit_velocity, 2)
-    unit_temperature = unit_pressure/((2 + 3*he_abundance)*unit_numberdensity*k)
-    unit_energy = unit_mass*np.power(unit_length, 2)/np.power(unit_time, 2)
+    unit_temperature = unit_pressure/((2 + 3*he_abundance)*unit_numberdensity*kCGS)
 
-    Mp = 1.00727646627*1e-3 # proton molar mass
+    # Parameters with dimension
+    gCGS = g*unit_length/(np.power(unit_time, 2))  # in cm/s^2
+    rholightCGS = rholight*unit_density
+    rhodenseCGS =rholightCGS*(1.0+Atwoods)/(1.0-Atwoods)  # in g/cm^3
+    lambaCGS = lamba*unit_length  # in cm
+    vc_muCGS = lambaCGS*np.sqrt(Atwoods*lambaCGS*gCGS/(Atwoods+1.0))/(2*Reynolds/(rholightCGS + rhodenseCGS))  # in g/(cm s)
+    time_maxCGS = taumax/np.sqrt(Atwoods*g/(lamba))  # in s
+    heatCapCGS = (5/2)*RCGS*unit_numberdensity/N_A  # in erg/K
 
-    vc_mu = vc_mu*unit_length*unit_time/unit_mass
-
-    tc_k_para = vc_mu*5/2*R/Mp # with units
-    tc_k_para = tc_k_para*unit_temperature*unit_mass/unit_energy # make unitless
+    # Dimensionless variables
+    vc_mu = vc_muCGS*unit_length*unit_time/unit_mass
+    heatCap = heatCapCGS*unit_temperature/(unit_pressure*np.power(unit_length, 3))
+    tc_k_para = vc_mu*heatCap
 
     print(f'{unit_time=}')
     print(f'{unit_velocity=}')
-    print(f'{unit_numberdensity=}')
+    print(f'{unit_density=}')
+    print(f'{unit_velocity=}')
+    print(f'{unit_length=}')
+    print(f'{unit_temperature=}')
     print(f'{vc_mu=}')
+    print('------- Par file & mod_usr.t -------')
+    print(f'{unit_numberdensity=}')
+    print(f'{vc_muCGS=}')
     print(f'{tc_k_para=}')
-    print(f'{time_max=}')
+    print(f'{time_maxCGS=}')
 
-    return vc_mu, tc_k_para, time_max
-
-getParfileValues(0.04, 1000)
+    return vc_muCGS, tc_k_para, time_maxCGS
 
 def getBSHeigthVelocity(fileName: str, level: int = 2):
     # Get the Bubble and spike height and velocity
@@ -154,10 +166,13 @@ def plotBubbleSpikeData(file: str, tauMax: int = 6):
     plt.show()
 
 
-'''
-if __name__ == '__main__':
-    # The folder in which all the .dat all stored should be passed as a command line argument
 
+if __name__ == '__main__':
+    # -- Run this to get the parameters for the parfile and mod_usr.t file
+    getParfileValues(0.04, 1000)
+
+
+    # -- This is for plotting the bubble/spike height/velocities
     if len(sys.argv) != 5:
         raise ValueError('Command line arguments: 1. path to folder with .dat files. 2. Atwoods number. 3. lambda. 4. y0')
     Atwoods = float(sys.argv[2])
@@ -167,4 +182,4 @@ if __name__ == '__main__':
 
     getBubbleSpikeData(folder, Atwoods, lamba, y0)
     plotBubbleSpikeData(folder + 'bubbleSpikeData.npy')
-'''
+
