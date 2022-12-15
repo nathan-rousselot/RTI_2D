@@ -45,7 +45,7 @@ def getParfileValues(Atwoods: float, Reynolds: float, lamba: float = 0.4, rholig
 
     # Dimensionless variables
     vc_mu = vc_muCGS*unit_length*unit_time/unit_mass
-    heatCap = heatCapCGS*unit_temperature/(unit_pressure*np.power(unit_length, 3))
+    heatCap = heatCapCGS*unit_temperature/(unit_pressure)
     tc_k_para = vc_mu*heatCap
 
     print(f'{unit_time=}')
@@ -169,7 +169,7 @@ def plotBubbleSpikeData(file: str, tauMax: int = 6):
 
 if __name__ == '__main__':
     # -- Run this to get the parameters for the parfile and mod_usr.t file
-    getParfileValues(0.04, 1000)
+    getParfileValues(0.04, 100)
 
 
     # -- This is for plotting the bubble/spike height/velocities
