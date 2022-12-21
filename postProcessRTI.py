@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import yt
 import os
 import sys
-from typing import Final
+from typing import Final, Literal
 from scipy.constants import m_p, k, R, N_A
 
 # plt.rcParams['text.usetex'] = True # Use latex formatting in matplotlib figures 
@@ -25,10 +25,10 @@ def getParfileValues(Atwoods: float, Reynolds: float, lamba: float = 0.4, rholig
     RCGS: Final[float] = R*1e7
 
     # Dimensions
-    unit_time = np.sqrt(lamba/Atwoods) # which lambda?
+    unit_time: float = np.sqrt(lamba/Atwoods) # which lambda?
     unit_velocity = np.sqrt(lamba*Atwoods/(1.0+Atwoods))
-    unit_numberdensity=1e20
-    unit_density = (1 + 4*he_abundance)*m_pCGS*unit_numberdensity
+    unit_numberdensity: float =1e20
+    unit_density: float = (1 + 4*he_abundance)*m_pCGS*unit_numberdensity
     unit_length = unit_velocity*unit_time
     unit_mass = unit_density*np.power(unit_length, 3)
     unit_pressure = unit_density*np.power(unit_velocity, 2)
@@ -36,8 +36,8 @@ def getParfileValues(Atwoods: float, Reynolds: float, lamba: float = 0.4, rholig
 
     # Parameters with dimension
     gCGS = g*unit_length/(np.power(unit_time, 2))  # in cm/s^2
-    rholightCGS = rholight*unit_density
-    rhodenseCGS =rholightCGS*(1.0+Atwoods)/(1.0-Atwoods)  # in g/cm^3
+    rholightCGS: float = rholight*unit_density
+    rhodenseCGS: float =rholightCGS*(1.0+Atwoods)/(1.0-Atwoods)  # in g/cm^3
     lambaCGS = lamba*unit_length  # in cm
     vc_muCGS = lambaCGS*np.sqrt(Atwoods*lambaCGS*gCGS/(Atwoods+1.0))/(2*Reynolds/(rholightCGS + rhodenseCGS))  # in g/(cm s)
     time_maxCGS = taumax/np.sqrt(Atwoods*g/(lamba))  # in s
@@ -71,12 +71,12 @@ def getBSHeigthVelocity(fileName: str, level: int = 2):
     # Outputs:
     #   Buuble/spike heights/velocities: double: hB, FrB, hS, FrS
 
-    filename = '../sshFiles/RTI_2D0020.dat'
+    filename: Literal['../sshFiles/RTI_2D0020.dat'] = '../sshFiles/RTI_2D0020.dat'
     yt.set_log_level(30)
 
     dat1 = yt.load(fileName, unit_system='code')
 
-    level = 2
+    level: int = 2
     densityL2 = dat1.covering_grid(level, left_edge=dat1.domain_left_edge, dims = dat1.domain_dimensions * dat1.refine_by**level)['density']
     velocityL2 = dat1.covering_grid(level, left_edge=dat1.domain_left_edge, dims = dat1.domain_dimensions * dat1.refine_by**level)['velocity_y']
     yGridL2 = dat1.covering_grid(level, left_edge=dat1.domain_left_edge, dims = dat1.domain_dimensions * dat1.refine_by**level)['y']
@@ -88,8 +88,8 @@ def getBSHeigthVelocity(fileName: str, level: int = 2):
     gradRhoBubble = np.gradient(rhoBubble, edge_order=2)
     gradRhoSpike = np.gradient(rhoSpike, edge_order=2)
 
-    indexBubbleMax = np.argmax(gradRhoBubble)
-    indexSpikeMax = np.argmax(gradRhoSpike)
+    indexBubbleMax: signedinteger = np.argmax(gradRhoBubble)
+    indexSpikeMax: signedinteger = np.argmax(gradRhoSpike)
 
     UB = velocityL2[0, indexBubbleMax, 0].value
     US = velocityL2[int(xnum/2), indexSpikeMax, 0].value
@@ -121,6 +121,7 @@ def getBubbleSpikeData(folderName: str, Atwoods: float, lamba: float, y0: float)
 
     data = np.zeros((nbFiles, 4))
     for index, file in enumerate(filesInFolder):
+        print(f'Done with {file}')
         hB, UB, hS, US = getBSHeigthVelocity(folderName + '/' + file)
         data[index, 0] = (hB - y0)/lamba
         data[index, 1] = UB/np.sqrt(Atwoods*lamba/(1.0 + Atwoods))
@@ -131,38 +132,118 @@ def getBubbleSpikeData(folderName: str, Atwoods: float, lamba: float, y0: float)
 
     return data
 
-def plotBubbleSpikeData(file: str, tauMax: int = 6):
+def plotBubbleSpikeData(file: str, tauMax: int = 6, tauCutOff = None) -> None:
     # Plot the BubbleSpikeData 
     data = np.load(file)
     s = np.shape(data)
     tauRange = np.linspace(0, tauMax, s[0])
 
-    plt.figure(1)
+    if tauCutOff is not None:
+        maxIndex = int(s[0]*tauCutOff)
+        tauRange = tauRange[0:maxIndex]
+        data = data[0:maxIndex, :]
+
+    plt.figure(1, figsize=(10, 6))
 
     plt.subplot(2, 2, 1)
     plt.plot(tauRange, data[:, 1], '.-')
-    plt.xlabel(r'\tau')
-    plt.ylabel(r'Fr_B')
+    plt.xlabel(r'$\tau$')
+    plt.ylabel(r'$Fr_B$')
 
     plt.subplot(2, 2, 3)
     plt.plot(tauRange, data[:, 0], '.-')
-    plt.xlabel(r'\tau')
-    plt.ylabel(r'h_B / lambda')
+    plt.xlabel(r'$\tau$')
+    plt.ylabel(r'$h_B / \lambda$')
 
     plt.subplot(2, 2, 2)
     plt.plot(tauRange, data[:, 3], '.-')
-    plt.xlabel(r'\tau')
-    plt.ylabel(r'Fr_S')
+    plt.xlabel(r'$\tau$')
+    plt.ylabel(r'$Fr_S$')
 
     plt.subplot(2, 2, 4)
     plt.plot(tauRange, data[:, 2], '.-')
-    plt.xlabel(r'\tau')
-    plt.ylabel(r'h_S / lambda')
+    plt.xlabel(r'$\tau$')
+    plt.ylabel(r'$h_S / \lambda$')
 
-    slashIndex = file.rfind('/')
-    folderName = file[0:slashIndex+1]
+    slashIndex: int = file.rfind('/')
+    folderName: str = file[0:slashIndex+1]
 
     plt.savefig(folderName + 'BubbleSpikeHeightVelocity.png')
+    plt.show()
+
+def getVorticity(dataFile, imageFile, A=0.04, g=1, lamba=0.4) -> None:
+    # Make a vorticity plot
+    # Inputs:
+    #   dataFile: .dat file of which to make a vorticity plot
+    #   imageFile: file to save image in
+    #   A: Atwood number
+    #   g: gravity constant
+    #   lamba: perturbation wavelength
+
+    dat1 = yt.load(dataFile, unit_system='code')
+
+    level: Final[int] = 1
+    velocityXGrid = dat1.covering_grid(level, left_edge=dat1.domain_left_edge, dims = dat1.domain_dimensions * dat1.refine_by**level)['velocity_x']
+    velocityYGrid = dat1.covering_grid(level, left_edge=dat1.domain_left_edge, dims = dat1.domain_dimensions * dat1.refine_by**level)['velocity_y']
+
+    velocityX = velocityXGrid[:, :, 0].value
+    velocityY = velocityYGrid[:, :, 0].value
+
+    del velocityYGrid
+    del velocityXGrid
+
+    t1 = np.gradient(velocityX, edge_order=2, axis=1)
+    t2 = np.gradient(velocityY, edge_order=2, axis=0)
+    vorticity = (t1-t2)/np.sqrt(A*g/lamba)
+
+    plt.matshow(np.rot90(vorticity))
+    plt.savefig(imageFile)
+    plt.show()
+
+
+def plotBubbleSpikeDataComparison(file: str, file2: str, tauMax: int = 6, tauCutOff = None) -> None:
+    # Plot the BubbleSpikeData 
+    data1 = np.load(file)
+    data2: Any = np.load(file2)
+    s = np.shape(data1)
+    tauRange = np.linspace(0, tauMax, s[0])
+
+    if tauCutOff is not None:
+        maxIndex = int(s[0]*tauCutOff)
+        tauRange = tauRange[0:maxIndex]
+        data1 = data1[0:maxIndex, :]
+        data2 = data2[0:maxIndex, :]
+
+    plt.figure(1, figsize=(10, 6))
+
+    plt.subplot(2, 2, 1)
+    plt.plot(tauRange, data1[:, 1], '.-')
+    plt.plot(tauRange, data2[:, 1], '.-')
+    plt.xlabel(r'$\tau$')
+    plt.ylabel(r'$Fr_B$')
+
+    plt.subplot(2, 2, 3)
+    plt.plot(tauRange, data1[:, 0], '.-')
+    plt.plot(tauRange, data2[:, 0], '.-')
+    plt.xlabel(r'$\tau$')
+    plt.ylabel(r'$h_B / \lambda$')
+
+    plt.subplot(2, 2, 2)
+    plt.plot(tauRange, data1[:, 3], '.-')
+    plt.plot(tauRange, data2[:, 3], '.-')
+    plt.xlabel(r'$\tau$')
+    plt.ylabel(r'$Fr_S$')
+
+    plt.subplot(2, 2, 4)
+    plt.plot(tauRange, data1[:, 2], '.-')
+    plt.plot(tauRange, data2[:, 2], '.-')
+    plt.xlabel(r'$\tau$')
+    plt.ylabel(r'$h_S / \lambda$')
+
+    slashIndex: int = file.rfind('/')
+    folderName: str = file[0:slashIndex+1]
+
+    plt.savefig(folderName + 'BubbleSpikeHeightVelocityComparison.png')
     plt.show()
 
 
